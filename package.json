@@ -9,9 +9,7 @@
   "engines": {
     "vscode": "^1.8.0"
   },
-  "categories": [
-    "Languages"
-  ],
+  "categories": [],
   "activationEvents": [
     "onCommand:outlineSearch.search"
   ],
