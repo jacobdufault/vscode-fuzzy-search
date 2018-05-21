@@ -1,25 +1,25 @@
 {
-  "name": "Search",
-  "description": "Outline search",
+  "name": "fuzzy-search",
+  "description": "Fuzzy search",
   "author": "Jacob Dufault",
   "license": "MIT",
   "version": "0.0.1",
   "publisher": "jacobdufault",
   "preview": true,
   "engines": {
-    "vscode": "^1.8.0"
+    "vscode": "^1.23.0"
   },
   "categories": [],
   "activationEvents": [
-    "onCommand:outlineSearch.search"
+    "onCommand:fuzzySearch.activeTextEditor"
   ],
   "main": "./out/src/extension",
   "contributes": {
     "commands": [
       {
-        "title": "Outline Search",
-        "category": "search",
-        "command": "outlineSearch.search"
+        "title": "Fuzzy outline",
+        "category": "Search",
+        "command": "fuzzySearch.activeTextEditor"
       }
     ]
   },
@@ -31,6 +31,6 @@
   "devDependencies": {
     "@types/node": "^6.0.52",
     "typescript": "^2.1.5",
-    "vscode": "1.1.4"
+    "vscode": "1.1.17"
   }
 }
