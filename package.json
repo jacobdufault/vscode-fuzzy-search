@@ -3,7 +3,7 @@
   "description": "Fuzzy search",
   "author": "Jacob Dufault",
   "license": "MIT",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "jacobdufault",
   "preview": true,
   "engines": {
