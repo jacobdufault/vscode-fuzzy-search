@@ -11,7 +11,8 @@
   },
   "categories": [],
   "activationEvents": [
-    "onCommand:fuzzySearch.activeTextEditor"
+    "onCommand:fuzzySearch.activeTextEditor",
+    "onCommand:fuzzySearch.activeTextEditorWithCurrentSelection"
   ],
   "main": "./out/src/extension",
   "contributes": {
@@ -20,6 +21,11 @@
         "title": "Fuzzy outline",
         "category": "Search",
         "command": "fuzzySearch.activeTextEditor"
+      },
+      {
+        "title": "Fuzzy outline with current selection",
+        "category": "Search",
+        "command": "fuzzySearch.activeTextEditorWithCurrentSelection"
       }
     ]
   },

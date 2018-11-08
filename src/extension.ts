@@ -17,7 +17,7 @@ function pad(str: string, length: number) {
 let valueFromPreviousInvocation = '';
 let lastSelected: Item = undefined;
 
-function showQuickPick() {
+function showFuzzySearch(useCurrentSelection: boolean) {
   // Build the entries we will show the user. One entry for each non-empty line,
   // prefixed with the line number. We prefix with the line number so lines stay
   // in the correct order and so duplicate lines do not get merged together.
@@ -62,27 +62,33 @@ function showQuickPick() {
   });
 
 
-  // Show the previous search string. When the user types a character, the
-  // preview string will replaced with the typed character.
-  pick.value = valueFromPreviousInvocation;
-  let previewValue = valueFromPreviousInvocation;
-  let hasPreviewValue = previewValue.length > 0;
-  pick.onDidChangeValue(value => {
-    if (hasPreviewValue) {
-      hasPreviewValue = false;
+  if (useCurrentSelection) {
+    pick.value = vscode.window.activeTextEditor.document.getText(
+      vscode.window.activeTextEditor.selection);
+  } else {
+    // Show the previous search string. When the user types a character, the
+    // preview string will replaced with the typed character.
+    pick.value = valueFromPreviousInvocation;
+    let previewValue = valueFromPreviousInvocation;
+    let hasPreviewValue = previewValue.length > 0;
+    pick.onDidChangeValue(value => {
+      if (hasPreviewValue) {
+        hasPreviewValue = false;
 
-      // Try to figure out what text the user typed. Assumes that the user typed
-      // at most one character.
-      for (let i = 0; i < value.length; ++i) {
-        if (previewValue.charAt(i) != value.charAt(i)) {
-          pick.value = value.charAt(i);
-          break;
+        // Try to figure out what text the user typed. Assumes that the user
+        // typed at most one character.
+        for (let i = 0; i < value.length; ++i) {
+          if (previewValue.charAt(i) != value.charAt(i)) {
+            pick.value = value.charAt(i);
+            break;
+          }
         }
       }
-    }
-  });
-  // Save the search string so we can show it next time fuzzy search is invoked.
-  pick.onDidChangeValue(value => valueFromPreviousInvocation = value);
+    });
+    // Save the search string so we can show it next time fuzzy search is
+    // invoked.
+    pick.onDidChangeValue(value => valueFromPreviousInvocation = value);
+  }
 
 
   // If fuzzy-search was cancelled navigate to the previous location.
@@ -100,7 +106,9 @@ function showQuickPick() {
   pick.show();
 }
 
-export function activate() {
-  vscode.commands.registerCommand(
-    'fuzzySearch.activeTextEditor', showQuickPick);
+export function activate(context: vscode.ExtensionContext) {
+  context.subscriptions.push(vscode.commands.registerCommand(
+    'fuzzySearch.activeTextEditor', () => showFuzzySearch(false)));
+  context.subscriptions.push(vscode.commands.registerCommand(
+    'fuzzySearch.activeTextEditorWithCurrentSelection', () => showFuzzySearch(true)));
 }
