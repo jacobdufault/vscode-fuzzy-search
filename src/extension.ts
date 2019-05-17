@@ -55,9 +55,11 @@ function showFuzzySearch(useCurrentSelection: boolean) {
 
   // Show the currently selected item in the editor.
   pick.onDidChangeActive(items => {
+    if (!items.length)  return;
+    
     let p = new vscode.Position(items[0].line, 0);
     vscode.window.activeTextEditor.revealRange(
-      new vscode.Range(p, p), vscode.TextEditorRevealType.InCenter);
+    new vscode.Range(p, p), vscode.TextEditorRevealType.InCenter);
     vscode.window.activeTextEditor.selection = new vscode.Selection(p, p);
   });
 
