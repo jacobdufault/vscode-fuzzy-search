@@ -14,6 +14,10 @@
     "onCommand:fuzzySearch.activeTextEditor",
     "onCommand:fuzzySearch.activeTextEditorWithCurrentSelection"
   ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
   "homepage": "https://github.com/jacobdufault/vscode-fuzzy-search",
   "repository": {
     "type": "git",
