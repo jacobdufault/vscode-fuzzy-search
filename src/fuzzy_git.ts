@@ -86,7 +86,8 @@ function makeGitStatusObject(gitStatusCode: Status, uri: vscode.Uri): GitChangeI
 }
 
 /**
- * Retrieves the Git repository.
+ * Retrieves the Git repository that contains the active editor's file, or the
+ * first repository when there is no active editor.
  * @returns The Git repository or null if not found.
  */
 export function getGitRepository(): Repository | null {
@@ -97,7 +98,8 @@ export function getGitRepository(): Repository | null {
     }
 
     const git = gitExtension.getAPI(1);
-    const repo = git.repositories[0];
+    const activeUri = vscode.window.activeTextEditor?.document.uri;
+    const repo = (activeUri && git.getRepository(activeUri)) || git.repositories[0];
 
     if (!repo) {
         vscode.window.showErrorMessage("No git repositories found");
@@ -110,12 +112,8 @@ export function getGitRepository(): Repository | null {
  * Retrieves the Git status.
  * @returns A promise that resolves to an array of Git status objects.
  */
-function getGitStatuses(): GitChangeInfo[] {
+function getGitStatuses(repo: Repository): GitChangeInfo[] {
     const gitStatusList: GitChangeInfo[] = [];
-    const repo = getGitRepository();
-    if (!repo) {
-        return [];
-    }
 
     for (const change of repo.state.indexChanges) {
         gitStatusList.push(makeGitStatusObject(change.status, change.uri));
@@ -141,7 +139,7 @@ export function showGitStatus() {
         return;
     }
 
-    const gitStatus = getGitStatuses();
+    const gitStatus = getGitStatuses(repo);
     if (gitStatus.length === 0) {
         vscode.window.showInformationMessage("No git changes found");
         return;
@@ -152,7 +150,7 @@ export function showGitStatus() {
     for (const file of gitStatus) {
         pickerItems.push(
             new GitItem(
-                `$(${file.status.icon}) ${path.relative(repo.rootUri.path, file.uri.path)}`,
+                `$(${file.status.icon}) ${path.relative(repo.rootUri.fsPath, file.uri.fsPath)}`,
                 file.status.symbol,
                 file.status.description,
                 file.status.key,
@@ -228,9 +226,9 @@ async function getGitChanges(editor: vscode.TextEditor): Promise<Item[]> {
         return [];
     }
 
-    const activeFile = getGitStatuses().filter(
-        (change) => change.uri.fsPath === editor.document.fileName
-    )[0];
+    const activeFile = getGitStatuses(repo).find(
+        (change) => change.uri.fsPath === editor.document.uri.fsPath
+    );
 
     if (!activeFile) {
         vscode.window.showInformationMessage("No git changes found");
@@ -247,7 +245,7 @@ async function getGitChanges(editor: vscode.TextEditor): Promise<Item[]> {
     // Use git blame to retrieve the full file and its line count, which makes it
     // easier to parse compared to diff HEAD.
     // TODO: git blame does not display deleted lines which could be useful.
-    const gitChanges = parseBlameOutput(await repo.blame(activeFile.uri.path));
+    const gitChanges = parseBlameOutput(await repo.blame(activeFile.uri.fsPath));
 
     if (gitChanges.length === 0) {
         vscode.window.showInformationMessage("No git changes found");
@@ -280,9 +278,13 @@ function openGitChanges(editor: vscode.TextEditor, items: Item[]): void {
     quickPick.matchOnDetail = true;
 
     // Preselect the first item that is at or below the current cursor position.
-    quickPick.activeItems = [items.filter((item) => item.line >= editor.selection.active.line)[0]];
+    const cursorLine = editor.selection.active.line;
+    quickPick.activeItems = [items.find((item) => item.line >= cursorLine) ?? items[items.length - 1]];
 
     quickPick.onDidChangeActive((items) => {
+        if (!items.length) {
+            return;
+        }
         let p = new vscode.Position(items[0].line, 0);
         editor.revealRange(new vscode.Range(p, p), vscode.TextEditorRevealType.InCenter);
         editor.selection = new vscode.Selection(p, p);
@@ -290,6 +292,9 @@ function openGitChanges(editor: vscode.TextEditor, items: Item[]): void {
 
     quickPick.onDidAccept(() => {
         const item = quickPick.selectedItems[0];
+        if (!item) {
+            return;
+        }
 
         let charPos = item.rawText.search(/\S/);
         if (charPos == -1) {
@@ -304,13 +309,22 @@ function openGitChanges(editor: vscode.TextEditor, items: Item[]): void {
         quickPick.hide();
     });
 
+    // If the picker was cancelled, go back to the starting position.
+    const startingSelection = editor.selection;
+    quickPick.onDidHide(() => {
+        if (quickPick.selectedItems.length === 0) {
+            editor.selection = startingSelection;
+            editor.revealRange(startingSelection, vscode.TextEditorRevealType.InCenter);
+        }
+    });
+
     quickPick.show();
 }
 
 export async function showGitChanges(editor: vscode.TextEditor) {
+    // getGitChanges already tells the user why the list is empty.
     const items = await getGitChanges(editor);
     if (items.length === 0) {
-        vscode.window.showInformationMessage("No git changes found");
         return;
     }
 

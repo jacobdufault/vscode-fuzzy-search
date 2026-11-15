@@ -27,30 +27,33 @@ function showFuzzySearch(editor: vscode.TextEditor, quickPickEntries: Item[], us
   pick.items = quickPickEntries;
   pick.canSelectMany = false;
 
-  // Try to preselect the previously selected item.
-  if (lastSelected) {
-    // Update `lastSelected` reference to point to the current entry in `items`.
-    lastSelected = quickPickEntries.find(
-      t => t.line == lastSelected.line || t.label == lastSelected.label)!;
+  // Try to preselect the previously selected item: same line text first, then same line number.
+  const previous =
+    quickPickEntries.find(t => t.label == lastSelected.label) ??
+    quickPickEntries.find(t => t.line == lastSelected.line);
+  if (previous) {
+    pick.activeItems = [previous];
   }
-  pick.activeItems = [lastSelected];
 
   // Save the item the user selected so it can be pre-selected next time fuzzy
   // search is invoked.
   pick.onDidAccept(() => {
-    lastSelected = pick.selectedItems[0];
+    const selected = pick.selectedItems[0];
+    if (!selected) {
+      return;
+    }
+    lastSelected = selected;
 
     // Find the first occurrence of the search string in the selected item.
-    let charPos = lastSelected.rawText
+    let charPos = selected.rawText
       .toLowerCase()
-      .indexOf(valueFromPreviousInvocation.toLowerCase()
-    );
+      .indexOf(pick.value.toLowerCase());
 
     if (charPos == -1) {
       charPos = 0;
     }
 
-    const position = new vscode.Position(lastSelected.line, charPos);
+    const position = new vscode.Position(selected.line, charPos);
     const selection = new vscode.Selection(position, position);
     editor.selection = selection;
 

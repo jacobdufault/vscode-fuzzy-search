@@ -1,11 +1,5 @@
 import * as vscode from "vscode";
 
-type QuickPickItemIcon =
-    | vscode.Uri
-    | { light: vscode.Uri; dark: vscode.Uri }
-    | vscode.ThemeIcon
-    | undefined;
-
 export class Item implements vscode.QuickPickItem {
 
     constructor(

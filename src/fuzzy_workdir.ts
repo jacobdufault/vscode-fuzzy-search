@@ -10,6 +10,8 @@ import { Item } from "./fuzzy_item";
 
 const exec = util.promisify(cp.exec);
 
+const MAX_TEXT_FILE_SIZE = 1024 * 1024;
+
 class GitFile extends Item {
     constructor(
         public label: string,
@@ -23,18 +25,21 @@ class GitFile extends Item {
 }
 
 async function getGitFiles(workspaceRoot: string): Promise<string[]> {
-    const { stdout, stderr } = await exec("git ls-files", { cwd: workspaceRoot });
-
-    if (stderr) {
-        vscode.window.showErrorMessage(`Failed to get git files: ${stderr}`);
+    try {
+        // -z: NUL-separated, unquoted paths (non-ASCII names stay intact).
+        const { stdout } = await exec("git ls-files -z", {
+            cwd: workspaceRoot,
+            maxBuffer: 64 * 1024 * 1024,
+        });
+        return stdout.split("\0").filter(Boolean);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Failed to get git files: ${err}`);
         return [];
     }
-
-    return stdout.split("\n").filter(Boolean);
 }
 
 let index = 0
-let fileIndexMap: { [key: string]: number } = {};
+let fileIndexMap: { [fsPath: string]: number } = {};
 
 export async function showGitFiles() {
     const repo = getGitRepository();
@@ -42,11 +47,11 @@ export async function showGitFiles() {
         return;
     }
 
-    const files = await getGitFiles(repo.rootUri.path);
+    const files = await getGitFiles(repo.rootUri.fsPath);
     const items: GitFile[] = [];
 
     for (const file of files) {
-        const filePath = path.join(repo.rootUri.path, file);
+        const filePath = path.join(repo.rootUri.fsPath, file);
         if (!fs.existsSync(filePath)) {
             continue
         }
@@ -62,8 +67,8 @@ export async function showGitFiles() {
     }
 
     items.sort((a, b) => {
-        const aTime = fileIndexMap[a.label] || 0;
-        const bTime = fileIndexMap[b.label] || 0;
+        const aTime = fileIndexMap[a.uri.fsPath] || 0;
+        const bTime = fileIndexMap[b.uri.fsPath] || 0;
         return bTime - aTime;
     });
 
@@ -80,7 +85,7 @@ export async function showGitFiles() {
             }
 
             index++;
-            fileIndexMap[item.label] = index;
+            fileIndexMap[item.uri.fsPath] = index;
             vscode.window.showTextDocument(item.uri);
         });
 }
@@ -103,18 +108,31 @@ async function getGitFilesText(): Promise<GitFileText[]> {
         return [];
     }
 
-    const files = await getGitFiles(repo.rootUri.path);
+    const root = repo.rootUri.fsPath;
+    const files = await getGitFiles(root);
     const items: GitFileText[] = [];
 
-    for (const file of files) {
-        const filePath = path.join(repo.rootUri.path, file);
+    const contents = await Promise.all(
+        files.map(async (file) => {
+            const filePath = path.join(root, file);
+            try {
+                // shortcut: skips files over 1 MB (lockfiles, minified bundles); make it a setting if users ask.
+                if ((await fs.promises.stat(filePath)).size > MAX_TEXT_FILE_SIZE) {
+                    return null;
+                }
+                return { filePath, fileContent: await fs.promises.readFile(filePath) };
+            } catch {
+                // file could be deleted from disk but still present in git ls-files
+                return null;
+            }
+        })
+    );
 
-        // file could be deleted from repo but still present in git ls-files
-        if (!fs.existsSync(filePath)) {
+    for (const entry of contents) {
+        if (!entry) {
             continue;
         }
-
-        const fileContent = fs.readFileSync(filePath);
+        const { filePath, fileContent } = entry;
 
         // Check if the file is binary. not always accurate, but good enough for most cases
         if (fileContent.includes(0)) {
@@ -132,7 +150,7 @@ async function getGitFilesText(): Promise<GitFileText[]> {
                 new GitFileText(
                     text.trim(),
                     `Line: ${line + 1}`,
-                    path.relative(repo.rootUri.path, filePath),
+                    path.relative(root, filePath),
                     text,
                     line,
                     vscode.Uri.file(filePath)
@@ -155,16 +173,13 @@ export async function openTextFilePicker(items: LineCharPositionItem[]) {
     quickPick.placeholder = "Select a file to open";
     quickPick.items = items;
 
-    let query = "";
-
-    quickPick.onDidChangeValue((value) => {
-        query = value;
-    });
-
     quickPick.onDidAccept(async () => {
         const item = quickPick.selectedItems[0];
+        if (!item) {
+            return;
+        }
 
-        let charPos = item.rawText.toLowerCase().indexOf(query.toLowerCase());
+        let charPos = item.rawText.toLowerCase().indexOf(quickPick.value.toLowerCase());
         if (charPos == -1) {
             charPos = 0;
         }

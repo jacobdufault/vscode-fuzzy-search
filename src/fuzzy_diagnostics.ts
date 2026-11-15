@@ -32,14 +32,13 @@ class DiagnosticItem extends Item {
     }
 }
 
-function getFileDiagnostics(filePath: string): DiagnosticItem[] {
-    const allDiagnostics = vscode.languages.getDiagnostics();
-    if (allDiagnostics.length === 0) {
+function getFileDiagnostics(uri: vscode.Uri): DiagnosticItem[] {
+    const currentFileDiagnostics = vscode.languages.getDiagnostics(uri);
+    if (currentFileDiagnostics.length === 0) {
         vscode.window.showInformationMessage("No diagnostics found");
         return [];
     }
 
-    const currentFileDiagnostics = allDiagnostics.filter((diag) => diag[0].path === filePath)[0][1];
     const items: DiagnosticItem[] = [];
 
     for (let i = 0; i < currentFileDiagnostics.length; i++) {
@@ -81,9 +80,13 @@ function openLinePicker(editor: vscode.TextEditor, items: LineCharPositionItem[]
     quickPick.matchOnDetail = true;
 
     // Preselect the first item that is at or below the current cursor position.
-    quickPick.activeItems = [items.filter((item) => item.line >= editor.selection.active.line)[0]];
+    const cursorLine = editor.selection.active.line;
+    quickPick.activeItems = [items.find((item) => item.line >= cursorLine) ?? items[items.length - 1]];
 
     quickPick.onDidChangeActive((items) => {
+        if (!items.length) {
+            return;
+        }
         let p = new vscode.Position(items[0].line, items[0].charPos);
         editor.revealRange(new vscode.Range(p, p), vscode.TextEditorRevealType.InCenter);
         editor.selection = new vscode.Selection(p, p);
@@ -91,6 +94,9 @@ function openLinePicker(editor: vscode.TextEditor, items: LineCharPositionItem[]
 
     quickPick.onDidAccept(() => {
         const item = quickPick.selectedItems[0];
+        if (!item) {
+            return;
+        }
         const position = new vscode.Position(item.line, item.charPos);
         const selection = new vscode.Selection(position, position);
         editor.selection = selection;
@@ -99,11 +105,20 @@ function openLinePicker(editor: vscode.TextEditor, items: LineCharPositionItem[]
         quickPick.hide();
     });
 
+    // If the picker was cancelled, go back to the starting position.
+    const startingSelection = editor.selection;
+    quickPick.onDidHide(() => {
+        if (quickPick.selectedItems.length === 0) {
+            editor.selection = startingSelection;
+            editor.revealRange(startingSelection, vscode.TextEditorRevealType.InCenter);
+        }
+    });
+
     quickPick.show();
 }
 
 export function showFileDiagnostics(editor: vscode.TextEditor) {
-    const items = getFileDiagnostics(editor.document.fileName);
+    const items = getFileDiagnostics(editor.document.uri);
     if (items.length === 0) {
         return;
     }
