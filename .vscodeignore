@@ -8,3 +8,4 @@ images/**
 types/**
 .prettierrc
 .prettierignore
+.github/**

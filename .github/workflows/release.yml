@@ -1,0 +1,56 @@
+# Publishes to the VS Code Marketplace and Open VSX with trusted publishing
+# (OIDC), so no tokens are stored. Both registries trust this exact file name
+# and the "release" environment: renaming either breaks publishing.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check tag matches package.json version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+      - run: npx vsce package --out extension.vsix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: extension.vsix
+
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: vsix
+      - name: Publish to VS Code Marketplace
+        run: npx vsce publish --oidc --packagePath extension.vsix --skip-duplicate
+      - name: Publish to Open VSX
+        run: npx ovsx publish extension.vsix --trusted-publishing --skip-duplicate
