@@ -1,40 +1,47 @@
 {
   "name": "fuzzy-search",
-  "description": "Fuzzy search",
-  "author": "Jacob Dufault",
+  "displayName": "Fuzzy Search Plus",
+  "description": "Fuzzy search the current file, its diagnostics, git changes and git-tracked files from the quick pick.",
+  "author": "Virgil Sisoe",
   "license": "MIT",
-  "version": "0.0.3",
-  "publisher": "jacobdufault",
-  "preview": true,
+  "version": "1.0.0",
+  "publisher": "virgilsisoe",
   "engines": {
     "vscode": "^1.88.0"
   },
-  "categories": [],
-  "activationEvents": [
-    "onStartupFinished"
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "fuzzy",
+    "search",
+    "lines",
+    "git",
+    "diagnostics",
+    "quick pick"
   ],
   "extensionKind": [
     "ui",
     "workspace"
   ],
-  "homepage": "https://github.com/jacobdufault/vscode-fuzzy-search",
+  "homepage": "https://github.com/sisoe24/vscode-fuzzy-search",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jacobdufault/vscode-fuzzy-search.git"
+    "url": "https://github.com/sisoe24/vscode-fuzzy-search.git"
   },
   "bugs": {
-    "url": "https://github.com/jacobdufault/vscode-fuzzy-search/issues"
+    "url": "https://github.com/sisoe24/vscode-fuzzy-search/issues"
   },
   "main": "./out/extension",
   "contributes": {
     "commands": [
       {
-        "title": "Fuzzy outline",
+        "title": "Fuzzy lines",
         "category": "Search",
         "command": "fuzzySearch.activeTextEditor"
       },
       {
-        "title": "Fuzzy outline with current selection",
+        "title": "Fuzzy lines with current selection",
         "category": "Search",
         "command": "fuzzySearch.activeTextEditorWithCurrentSelection"
       },
@@ -68,8 +75,7 @@
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "compile": "tsc -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install"
+    "compile": "tsc -p ./"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",

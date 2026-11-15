@@ -1,10 +1,24 @@
-# Fuzzy search
+# Fuzzy Search Plus
 
-Provides a fuzzy search using the quick pick window of the current text
-document.
+Jump anywhere with a fuzzy search in the VS Code quick pick. Type a few
+characters, pick a result, and press Enter to go there. When you search the
+current file, the editor follows the selected result as you move through the
+list, and Escape takes you back to where you were.
 
-Bind `fuzzySearch.activeTextEditor` to a keyboard shortcut to use the search
-quickly.
+You can search:
+
+- the lines of the current file
+- the errors, warnings and hints of the current file
+- the files with git changes, and the changed lines of the current file
+- the files tracked by git, and the text inside them
+
+Bind `fuzzySearch.activeTextEditor` (`Search: Fuzzy lines`) to a keyboard
+shortcut to search the current file quickly.
+
+This extension is a fork of
+[jacobdufault/vscode-fuzzy-search](https://github.com/jacobdufault/vscode-fuzzy-search),
+which was last updated in 2020. The fork adds the diagnostics and git
+searches.
 
 ## Available Commands
 
@@ -12,8 +26,8 @@ All commands are available by opening the Command Palette (`Command+Shift+P` on 
 
 | Command Name                                   | Description                                           | Command ID                                         |
 | ---------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------- |
-| `Search: Fuzzy outline`                        | Fuzzy search through the current file's outline       | `fuzzySearch.activeTextEditor`                     |
-| `Search: Fuzzy outline with current selection` | Fuzzy search outline, starting with current selection | `fuzzySearch.activeTextEditorWithCurrentSelection` |
+| `Search: Fuzzy lines`                          | Fuzzy search through the lines of the current file    | `fuzzySearch.activeTextEditor`                     |
+| `Search: Fuzzy lines with current selection`   | Fuzzy search lines, starting with current selection   | `fuzzySearch.activeTextEditorWithCurrentSelection` |
 | `Search: Fuzzy diagnostics`                    | Fuzzy search through current file's diagnostics       | `fuzzySearch.activeTextEditorDiagnostics`          |
 | `Search: Fuzzy git status`                     | Fuzzy search through git status of working directory  | `fuzzySearch.gitStatus`                            |
 | `Search: Fuzzy git changes`                    | Fuzzy search through git changes in current file      | `fuzzySearch.gitChanges`                           |
@@ -51,4 +65,4 @@ All commands are available by opening the Command Palette (`Command+Shift+P` on 
 
 ## Demo
 
-![Demo](./images/demo.gif)
+![Demo](https://raw.githubusercontent.com/sisoe24/vscode-fuzzy-search/master/images/demo.gif)
