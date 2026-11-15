@@ -5,6 +5,7 @@ src/**
 build.cmd
 tsconfig.json
 images/**
+!images/icon.png
 types/**
 .prettierrc
 .prettierignore

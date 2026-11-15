@@ -16,6 +16,7 @@ Fuzzy Search Plus is a fork of
 - `Search: Fuzzy git changes`: search the changed lines of the current file.
 - `Search: Fuzzy git files`: search the files tracked by git.
 - `Search: Fuzzy git files text`: search the text of the files tracked by git.
+- Extension icon.
 
 ### Changed
 

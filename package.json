@@ -6,6 +6,7 @@
   "license": "MIT",
   "version": "1.0.0",
   "publisher": "virgilsisoe",
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.88.0"
   },
