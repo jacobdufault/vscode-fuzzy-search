@@ -18,7 +18,9 @@ shortcut to search the current file quickly.
 This extension is a fork of
 [jacobdufault/vscode-fuzzy-search](https://github.com/jacobdufault/vscode-fuzzy-search),
 which was last updated in 2020. The fork adds the diagnostics and git
-searches.
+searches. It keeps the original command IDs, so your keybindings still work.
+Uninstall the original extension first, because both register the same
+commands.
 
 ## Available Commands
 

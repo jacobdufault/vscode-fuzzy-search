@@ -1,5 +1,5 @@
 {
-  "name": "fuzzy-search",
+  "name": "fuzzy-search-plus",
   "displayName": "Fuzzy Search Plus",
   "description": "Fuzzy search the current file, its diagnostics, git changes and git-tracked files from the quick pick.",
   "author": "Virgil Sisoe",
